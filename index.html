@@ -1,0 +1,2471 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="artifact-type" content="dashboard">
+  <meta name="design-style" content="briefing">
+  <title>台北市第一選區（士林・北投）林杏兒選情預測與動態模擬</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&family=Noto+Serif+TC:wght@600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.1/dist/chart.umd.min.js"></script>
+  <script src="https://unpkg.com/lucide@1.43.0/dist/umd/lucide.min.js"></script>
+  <style>
+    :root {
+      color-scheme: light;
+
+      /* Page and surfaces: warm stone-white paper (Briefing) */
+      --background: #faf9f5;
+      --surface-container-low: #ffffff;
+      --surface-container: #f1efe8;
+      --surface-container-high: #e6e2d6;
+
+      /* Ink */
+      --on-surface: #17181a;
+      --on-surface-variant: #56585c;
+
+      /* Rules */
+      --outline: #17181a;
+      --outline-variant: #dedad0;
+
+      /* Accents */
+      --primary: #17181a;
+      --on-primary: #faf9f5;
+      --primary-container: #f2b705;
+      --on-primary-container: #17181a;
+      --secondary: #1f4e5f;
+      --tertiary: #785008;
+      --error: #b42318;
+      --on-error: #ffffff;
+
+      /* Data series */
+      --data-1: #1f4e5f;
+      --data-2: #d99000;
+      --data-3: #2b6e52;
+      --data-4: #b84a39;
+      --data-context: #c4bfb2;
+
+      /* Party & Semantic tokens */
+      --party-kmt: #1b4b8a;
+      --party-kmt-soft: #e8eff8;
+      --party-dpp: #1f6b48;
+      --party-dpp-soft: #e6f3ec;
+      --party-tpp: #288585;
+      --party-tpp-soft: #e5f4f4;
+      --party-new: #b58000;
+      --party-new-soft: #fbf3dc;
+      --party-other: #626469;
+      --party-other-soft: #efeeea;
+
+      --positive: #2b6e52;
+      --positive-bg: #e7f3ed;
+      --warning: #9a6500;
+      --warning-bg: #fcf2d9;
+      --danger: #b42318;
+      --danger-bg: #fbeae8;
+      --focus: #1f4e5f;
+
+      /* Fonts (CJK listed first per non-Latin guidelines) */
+      --font-headline: 'Noto Serif TC', 'Source Serif 4', serif;
+      --font-body: 'Noto Sans TC', 'Plus Jakarta Sans', sans-serif;
+      --font-label: 'Geist Mono', 'Noto Sans TC', monospace;
+
+      /* Type scale (Dashboard / Tool tighter ratio) */
+      --display-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.35rem);
+      --headline-size: clamp(1.25rem, 1.1rem + 0.5vw, 1.5rem);
+      --subhead-size: clamp(1.0625rem, 1rem + 0.25vw, 1.1875rem);
+      --body-size: clamp(0.9375rem, 0.9rem + 0.15vw, 1rem);
+      --label-size: 0.75rem;
+
+      /* Shape */
+      --rounded: 0.25rem;
+      --rounded-lg: 0.375rem;
+      --rounded-full: 0.25rem;
+
+      /* Style effects */
+      --section-rule: 1.5px solid var(--outline);
+      --card-border: 1px solid var(--outline-variant);
+      --badge-radius: 2px;
+      --heading-tracking: -0.02em;
+      --label-tracking: 0.06em;
+
+      /* Spacing scale (4pt base) */
+      --space-xs: 0.25rem;
+      --space-sm: 0.5rem;
+      --space-md: 1rem;
+      --space-lg: 1.5rem;
+      --space-xl: 2.5rem;
+      --space-2xl: 4rem;
+
+      /* Motion */
+      --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+      --dur-micro: 120ms;
+      --dur-short: 220ms;
+      --dur-long: 420ms;
+    }
+
+    /* Base reset */
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      overflow-x: clip;
+      margin: 0;
+      padding: 0;
+      background-color: var(--background);
+      color: var(--on-surface);
+      font-family: var(--font-body);
+      font-size: var(--body-size);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    header { position: static !important; }
+    button, input, select, textarea {
+      font-family: inherit;
+      font-size: inherit;
+      color: inherit;
+    }
+
+    :focus-visible {
+      outline: 2.5px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    .page-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-xl);
+      padding: var(--space-lg) var(--space-lg) var(--space-2xl);
+      max-width: 1240px;
+      margin: 0 auto;
+      overflow: hidden;
+    }
+    .page-grid * { min-width: 0; }
+
+    /* Briefing Dossier Header & Section Bars */
+    .dossier-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-sm);
+      border-bottom: var(--section-rule);
+      padding-bottom: var(--space-sm);
+      margin-bottom: var(--space-md);
+    }
+    .dossier-bar-left {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+    .dossier-pill {
+      background: var(--primary-container);
+      color: var(--on-primary-container);
+      font-family: var(--font-label);
+      font-weight: 700;
+      font-size: var(--label-size);
+      letter-spacing: 0.04em;
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--badge-radius);
+      white-space: nowrap;
+    }
+    .dossier-meta {
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      color: var(--on-surface-variant);
+      letter-spacing: 0;
+    }
+
+    .hero-header {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+    .hero-title-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: var(--space-md);
+    }
+    .page-title {
+      font-family: var(--font-headline);
+      font-size: var(--display-size);
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: var(--heading-tracking);
+      color: var(--on-surface);
+      margin: 0;
+    }
+    .standfirst {
+      font-family: var(--font-body);
+      font-size: var(--subhead-size);
+      font-weight: 600;
+      color: var(--secondary);
+      margin: var(--space-xs) 0 0;
+      max-width: 68ch;
+    }
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-xs);
+      min-height: 44px;
+      padding: var(--space-sm) var(--space-md);
+      border-radius: var(--rounded);
+      font-weight: 600;
+      font-size: 0.875rem;
+      cursor: pointer;
+      border: 1px solid var(--outline-variant);
+      background: var(--surface-container-low);
+      color: var(--on-surface);
+      transition: background-color var(--dur-micro) var(--ease-out), border-color var(--dur-micro) var(--ease-out), transform var(--dur-micro) var(--ease-out);
+    }
+    .btn:hover {
+      background: var(--surface-container);
+      border-color: var(--outline);
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary {
+      background: var(--primary);
+      color: var(--on-primary);
+      border-color: var(--primary);
+    }
+    .btn-primary:hover {
+      background: var(--secondary);
+      border-color: var(--secondary);
+    }
+    .btn-icon {
+      width: 16px;
+      height: 16px;
+      flex-shrink: 0;
+    }
+
+    /* Section Headings */
+    .section-block {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+    .section-head-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: var(--space-sm);
+      border-bottom: var(--section-rule);
+      padding-bottom: var(--space-sm);
+    }
+    .section-title-wrap {
+      display: flex;
+      align-items: center;
+      gap: var(--space-sm);
+    }
+    .index-num {
+      font-family: var(--font-label);
+      font-weight: 600;
+      font-size: var(--label-size);
+      color: var(--on-primary-container);
+      background: var(--primary-container);
+      padding: 0.125rem 0.45rem;
+      border-radius: var(--badge-radius);
+    }
+    .section-heading {
+      font-family: var(--font-headline);
+      font-size: var(--headline-size);
+      font-weight: 700;
+      margin: 0;
+      color: var(--on-surface);
+      line-height: 1.25;
+    }
+    .section-sub {
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      color: var(--on-surface-variant);
+    }
+
+    /* Alert Status Strip */
+    .alert-strip {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-md);
+      padding: var(--space-md) var(--space-lg);
+      background: var(--surface-container-low);
+      border: var(--card-border);
+      border-left: 5px solid var(--positive);
+      border-radius: var(--rounded-lg);
+      transition: border-color var(--dur-short) var(--ease-out), background-color var(--dur-short) var(--ease-out);
+    }
+    .alert-strip.level-safe { border-left-color: var(--positive); }
+    .alert-strip.level-watch { border-left-color: var(--secondary); }
+    .alert-strip.level-elevated { border-left-color: var(--warning); background: var(--warning-bg); }
+    .alert-strip.level-danger { border-left-color: var(--danger); background: var(--danger-bg); }
+
+    .alert-left {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      flex: 1 1 320px;
+    }
+    .alert-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      padding: var(--space-xs) var(--space-sm);
+      border-radius: var(--badge-radius);
+      font-weight: 700;
+      font-size: 0.8125rem;
+      white-space: nowrap;
+      background: var(--positive-bg);
+      color: var(--positive);
+    }
+    .level-watch .alert-badge { background: var(--party-kmt-soft); color: var(--secondary); }
+    .level-elevated .alert-badge { background: var(--primary-container); color: var(--on-primary-container); }
+    .level-danger .alert-badge { background: var(--danger); color: var(--on-error); }
+
+    .alert-desc {
+      margin: 0;
+      font-size: 0.9375rem;
+      color: var(--on-surface);
+    }
+    .alert-meta-right {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      color: var(--on-surface-variant);
+    }
+
+    /* Hero KPI Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+      gap: var(--space-md);
+    }
+    .figure-card {
+      background: var(--surface-container-low);
+      border: var(--card-border);
+      border-radius: var(--rounded-lg);
+      padding: var(--space-md) var(--space-lg);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+    .figure-card.featured {
+      border-top: 3px solid var(--secondary);
+    }
+    .kpi-label {
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      font-weight: 600;
+      color: var(--on-surface-variant);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-xs);
+    }
+    .kpi-value-row {
+      display: flex;
+      align-items: baseline;
+      gap: var(--space-sm);
+      flex-wrap: wrap;
+    }
+    .kpi-value {
+      font-family: var(--font-label);
+      font-size: clamp(1.85rem, 1.5rem + 1vw, 2.35rem);
+      font-weight: 600;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+      color: var(--on-surface);
+    }
+    .kpi-delta {
+      font-family: var(--font-label);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      padding: 0.125rem 0.4rem;
+      border-radius: var(--badge-radius);
+      background: var(--surface-container);
+      color: var(--on-surface-variant);
+    }
+    .kpi-delta.up { background: var(--positive-bg); color: var(--positive); }
+    .kpi-delta.down { background: var(--danger-bg); color: var(--danger); }
+    .kpi-delta.neutral { background: var(--surface-container); color: var(--on-surface-variant); }
+
+    .kpi-foot {
+      font-size: 0.8125rem;
+      color: var(--on-surface-variant);
+      margin-top: auto;
+      padding-top: var(--space-xs);
+    }
+    .kpi-bar-track {
+      height: 6px;
+      width: 100%;
+      background: var(--surface-container-high);
+      border-radius: var(--badge-radius);
+      overflow: hidden;
+      margin-top: var(--space-xs);
+    }
+    .kpi-bar-fill {
+      height: 100%;
+      background: var(--data-1);
+      transition: width var(--dur-short) var(--ease-out), background-color var(--dur-short) var(--ease-out);
+    }
+
+    /* Mini CI SVG inside KPI Card */
+    .ci-mini-wrap {
+      width: 100%;
+      height: 44px;
+      margin-top: var(--space-xs);
+    }
+
+    /* Simulator Layout */
+    .simulator-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+      gap: var(--space-lg);
+      align-items: start;
+    }
+    .controls-panel {
+      background: var(--surface-container-low);
+      border: var(--card-border);
+      border-radius: var(--rounded-lg);
+      padding: var(--space-lg);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-lg);
+    }
+    .preset-bar {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+      padding-bottom: var(--space-md);
+      border-bottom: 1px solid var(--outline-variant);
+    }
+    .control-group-label {
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--on-surface);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-sm);
+    }
+    .control-hint {
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      font-weight: 500;
+      color: var(--on-surface-variant);
+    }
+
+    .preset-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-xs);
+    }
+    .chip-btn {
+      min-height: 38px;
+      padding: var(--space-xs) var(--space-sm);
+      font-size: 0.8125rem;
+      font-weight: 600;
+      border-radius: var(--rounded);
+      border: 1px solid var(--outline-variant);
+      background: var(--surface-container);
+      color: var(--on-surface);
+      cursor: pointer;
+      transition: background-color var(--dur-micro) var(--ease-out), border-color var(--dur-micro) var(--ease-out), color var(--dur-micro) var(--ease-out);
+    }
+    .chip-btn:hover {
+      border-color: var(--outline);
+      background: var(--surface-container-high);
+    }
+    .chip-btn.active {
+      background: var(--primary);
+      color: var(--on-primary);
+      border-color: var(--primary);
+    }
+
+    /* Segmented Radio Options */
+    .segment-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(130px, 100%), 1fr));
+      gap: var(--space-xs);
+    }
+    .seg-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2px;
+      min-height: 52px;
+      padding: var(--space-sm);
+      border-radius: var(--rounded);
+      border: 1px solid var(--outline-variant);
+      background: var(--surface-container-low);
+      cursor: pointer;
+      text-align: left;
+      transition: background-color var(--dur-micro) var(--ease-out), border-color var(--dur-micro) var(--ease-out), box-shadow var(--dur-micro) var(--ease-out);
+    }
+    .seg-btn:hover {
+      background: var(--surface-container);
+      border-color: var(--outline);
+    }
+    .seg-btn.active {
+      background: var(--party-kmt-soft);
+      border-color: var(--secondary);
+      box-shadow: inset 0 0 0 1px var(--secondary);
+    }
+    .seg-btn-title {
+      font-weight: 700;
+      font-size: 0.875rem;
+      color: var(--on-surface);
+    }
+    .seg-btn-sub {
+      font-family: var(--font-label);
+      font-size: 0.72rem;
+      color: var(--on-surface-variant);
+    }
+
+    /* Slider + Number Input Row */
+    .slider-block {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+    .slider-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 92px;
+      gap: var(--space-md);
+      align-items: center;
+    }
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 8px;
+      background: var(--surface-container-high);
+      border-radius: var(--rounded);
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--secondary);
+      border: 2px solid var(--surface-container-low);
+      box-shadow: 0 1px 3px rgba(23, 24, 26, 0.25);
+      cursor: pointer;
+      transition: transform var(--dur-micro) var(--ease-out), background-color var(--dur-micro) var(--ease-out);
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.1);
+      background: var(--primary);
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--secondary);
+      border: 2px solid var(--surface-container-low);
+      cursor: pointer;
+    }
+    .num-input-wrap {
+      display: flex;
+      align-items: center;
+      border: 1px solid var(--outline-variant);
+      border-radius: var(--rounded);
+      background: var(--surface-container-low);
+      padding-right: var(--space-xs);
+    }
+    .num-input-wrap:focus-within {
+      border-color: var(--secondary);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--secondary) 20%, transparent);
+    }
+    .num-input {
+      width: 100%;
+      min-height: 40px;
+      border: none;
+      background: transparent;
+      padding: var(--space-xs) var(--space-sm);
+      font-family: var(--font-label);
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+    .num-input:focus { outline: none; }
+    .num-unit {
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      color: var(--on-surface-variant);
+    }
+
+    .regional-dual-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
+      gap: var(--space-md);
+      padding: var(--space-md);
+      background: var(--surface-container);
+      border-radius: var(--rounded);
+    }
+
+    /* Live Output & Sensitivity Column */
+    .sim-output-col {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+    .chart-card {
+      background: var(--surface-container-low);
+      border: var(--card-border);
+      border-radius: var(--rounded-lg);
+      padding: var(--space-lg);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+    }
+    .chart-card-head {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: var(--space-xs);
+    }
+    .chart-title {
+      font-family: var(--font-headline);
+      font-size: var(--subhead-size);
+      font-weight: 700;
+      margin: 0;
+      color: var(--on-surface);
+    }
+    .chart-sub {
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      color: var(--on-surface-variant);
+      margin: 0;
+    }
+    .chart-box {
+      position: relative;
+      width: 100%;
+      min-height: 280px;
+    }
+    .chart-box-tall {
+      position: relative;
+      width: 100%;
+      min-height: 540px;
+    }
+
+    /* Factor Attribution Breakdown List */
+    .factor-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-sm);
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    .factor-item {
+      display: grid;
+      grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) 76px;
+      align-items: center;
+      gap: var(--space-sm);
+      padding: var(--space-xs) 0;
+      border-bottom: 1px solid var(--outline-variant);
+      font-size: 0.875rem;
+    }
+    .factor-item:last-child { border-bottom: none; }
+    .factor-bar-bg {
+      height: 8px;
+      background: var(--surface-container-high);
+      border-radius: var(--badge-radius);
+      position: relative;
+      overflow: hidden;
+    }
+    .factor-bar-val {
+      height: 100%;
+      border-radius: var(--badge-radius);
+      transition: width var(--dur-short) var(--ease-out), background-color var(--dur-short) var(--ease-out);
+    }
+    .factor-num {
+      font-family: var(--font-label);
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+
+    /* Candidate Ranking Grid */
+    .filter-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-sm);
+    }
+    .ranking-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+      gap: var(--space-lg);
+      align-items: start;
+    }
+    .table-scroll {
+      overflow-x: auto;
+      max-height: 600px;
+      overflow-y: auto;
+      border: var(--card-border);
+      border-radius: var(--rounded-lg);
+      background: var(--surface-container-low);
+    }
+    table.data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+    }
+    .data-table thead th {
+      position: sticky;
+      top: 0;
+      background: var(--surface-container);
+      color: var(--on-surface);
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      font-weight: 600;
+      text-align: left;
+      padding: var(--space-sm) var(--space-sm);
+      border-bottom: var(--section-rule);
+      white-space: nowrap;
+      z-index: 2;
+    }
+    .data-table thead th.num,
+    .data-table tbody td.num {
+      text-align: right;
+      font-family: var(--font-label);
+      font-variant-numeric: tabular-nums;
+    }
+    .data-table tbody td {
+      padding: 0.55rem var(--space-sm);
+      border-bottom: 1px solid var(--outline-variant);
+      vertical-align: middle;
+    }
+    .data-table tbody tr.row-focal {
+      background: var(--warning-bg);
+      font-weight: 600;
+    }
+    .data-table tbody tr.row-cutoff {
+      border-bottom: 2px dashed var(--danger);
+    }
+    .party-badge {
+      display: inline-block;
+      padding: 0.1rem 0.4rem;
+      border-radius: var(--badge-radius);
+      font-size: 0.72rem;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .party-kmt { background: var(--party-kmt-soft); color: var(--party-kmt); }
+    .party-dpp { background: var(--party-dpp-soft); color: var(--party-dpp); }
+    .party-tpp { background: var(--party-tpp-soft); color: var(--party-tpp); }
+    .party-new { background: var(--party-new-soft); color: var(--party-new); }
+    .party-other { background: var(--party-other-soft); color: var(--party-other); }
+
+    .incumbent-tag {
+      font-family: var(--font-label);
+      font-size: 0.68rem;
+      padding: 0.05rem 0.3rem;
+      border: 1px solid var(--outline-variant);
+      border-radius: var(--badge-radius);
+      color: var(--on-surface-variant);
+      margin-left: 4px;
+    }
+    .seat-status {
+      font-family: var(--font-label);
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.12rem 0.4rem;
+      border-radius: var(--badge-radius);
+      white-space: nowrap;
+    }
+    .seat-safe { background: var(--positive-bg); color: var(--positive); }
+    .seat-bubble { background: var(--warning-bg); color: var(--warning); }
+    .seat-out { background: var(--surface-container); color: var(--on-surface-variant); }
+
+    /* Party & KMT Squeeze Grid */
+    .analysis-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr));
+      gap: var(--space-lg);
+    }
+
+    /* Methodology Aside Box */
+    .aside-box {
+      background: var(--surface-container);
+      border-top: var(--section-rule);
+      border-radius: 0 0 var(--rounded-lg) var(--rounded-lg);
+      padding: var(--space-lg);
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr));
+      gap: var(--space-lg);
+    }
+    .aside-col h3 {
+      font-family: var(--font-headline);
+      font-size: 1rem;
+      font-weight: 700;
+      margin: 0 0 var(--space-xs);
+    }
+    .aside-col p, .aside-col li {
+      font-size: 0.875rem;
+      color: var(--on-surface-variant);
+      margin: 0;
+      line-height: 1.55;
+    }
+    .aside-col ul {
+      padding-left: 1.2rem;
+      margin: var(--space-xs) 0 0;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-xs);
+    }
+
+    .source-footer {
+      border-top: var(--card-border);
+      padding-top: var(--space-md);
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      color: var(--on-surface-variant);
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: var(--space-sm);
+    }
+
+    /* Toast feedback */
+    .inline-toast {
+      font-family: var(--font-label);
+      font-size: var(--label-size);
+      color: var(--positive);
+      font-weight: 600;
+      min-height: 1.2em;
+    }
+
+    @media (max-width: 960px) {
+      .simulator-layout,
+      .ranking-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
+
+    @media (max-width: 640px) {
+      .page-grid {
+        padding: var(--space-md);
+        gap: var(--space-lg);
+      }
+      .controls-panel, .chart-card, .figure-card {
+        padding: var(--space-md);
+      }
+      .slider-row {
+        grid-template-columns: minmax(0, 1fr) 80px;
+        gap: var(--space-sm);
+      }
+      .chart-box-tall {
+        min-height: 460px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page-grid">
+
+    <!-- Header Dossier -->
+    <header class="hero-header">
+      <div class="dossier-bar">
+        <div class="dossier-bar-left">
+          <span class="dossier-pill">ELECTION BRIEFING · TP-01</span>
+          <span class="dossier-meta">台北市第一選區（士林區・北投區）｜應選 12 席・19 位候選人參選評估</span>
+        </div>
+        <span class="dossier-meta">基準調查樣本 N = 1,071（2026 年 9 月調查加權）</span>
+      </div>
+      <div class="hero-title-row">
+        <div>
+          <h1 class="page-title">林杏兒選情預測與動態模擬儀表板</h1>
+          <p class="standfirst">整合議員支持度、第二選擇轉移、市長母雞效應與國民黨配票模式之即時機率預測模型</p>
+        </div>
+        <div class="hero-actions">
+          <span id="save-status" class="inline-toast" aria-live="polite"></span>
+          <button type="button" class="btn" id="btn-reset" onclick="resetToBaseline()">
+            <i data-lucide="rotate-ccw" class="btn-icon" aria-hidden="true"></i>
+            <span>重設基準預測</span>
+          </button>
+          <button type="button" class="btn btn-primary" onclick="exportSimulationCsv()">
+            <i data-lucide="download" class="btn-icon" aria-hidden="true"></i>
+            <span>匯出模擬報表 (CSV)</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Section 01: Core Prediction Overview -->
+    <section class="section-block" aria-labelledby="sec-01-title">
+      <div class="section-head-row">
+        <div class="section-title-wrap">
+          <span class="index-num">01</span>
+          <h2 id="sec-01-title" class="section-heading">核心預測總覽</h2>
+        </div>
+        <span class="section-sub">即時模擬數值隨下方參數同步重算</span>
+      </div>
+
+      <!-- Dynamic Alert Banner -->
+      <div id="alert-strip" class="alert-strip level-watch" role="status" aria-live="polite">
+        <div class="alert-left">
+          <span id="alert-badge" class="alert-badge">低度警戒・安全領先邊緣</span>
+          <p id="alert-desc" class="alert-desc">
+            林杏兒處於第 10 名當選安全區，領先第 13 名落選頭 +1.03 個百分點；但國民黨內部 5 人參選，仍需防範選票過度向領先者集中。
+          </p>
+        </div>
+        <div class="alert-meta-right">
+          <span id="alert-cutoff-gap">距第13名落選門檻：+1.03%</span>
+        </div>
+      </div>
+
+      <!-- 4 KPI Cards -->
+      <div class="kpi-grid">
+        <article class="figure-card featured">
+          <div class="kpi-label">
+            <span>林杏兒預估得票率</span>
+            <span id="kpi-mode-tag">基準模型</span>
+          </div>
+          <div class="kpi-value-row">
+            <span id="kpi-vote-share" class="kpi-value">3.38%</span>
+            <span id="kpi-share-delta" class="kpi-delta neutral">基準 0.00%</span>
+          </div>
+          <div class="kpi-bar-track" aria-hidden="true">
+            <div id="kpi-share-bar" class="kpi-bar-fill" style="width: 33.8%;"></div>
+          </div>
+          <div id="kpi-share-foot" class="kpi-foot">全區有效票佔比（原始民調第一人選 2.0% ＋ 第二選擇／未表態歸戶）</div>
+        </article>
+
+        <article class="figure-card">
+          <div class="kpi-label">
+            <span>預估選區排名</span>
+            <span>應選 12 席</span>
+          </div>
+          <div class="kpi-value-row">
+            <span id="kpi-rank" class="kpi-value">第 10 名</span>
+            <span id="kpi-rank-delta" class="kpi-delta neutral">持平</span>
+          </div>
+          <div id="kpi-rank-foot" class="kpi-foot">領先第 12 席門檻 +0.70%｜領先第 13 名 +1.03%</div>
+        </article>
+
+        <article class="figure-card">
+          <div class="kpi-label">
+            <span>95% 信心區間</span>
+            <span>Monte Carlo 誤差帶</span>
+          </div>
+          <div class="kpi-value-row">
+            <span id="kpi-ci" class="kpi-value">2.30% – 4.46%</span>
+          </div>
+          <svg id="ci-mini-svg" class="ci-mini-wrap" viewBox="0 0 260 44" aria-hidden="true"></svg>
+          <div id="kpi-ci-foot" class="kpi-foot">含抽樣誤差與選民流向波動（標準誤 SE ≈ 0.55%）</div>
+        </article>
+
+        <article class="figure-card">
+          <div class="kpi-label">
+            <span>預估當選機率</span>
+            <span id="kpi-prob-tier">高機率當選</span>
+          </div>
+          <div class="kpi-value-row">
+            <span id="kpi-win-prob" class="kpi-value">99.14%</span>
+            <span id="kpi-prob-delta" class="kpi-delta neutral">基準</span>
+          </div>
+          <div class="kpi-bar-track" aria-hidden="true">
+            <div id="kpi-prob-bar" class="kpi-bar-fill" style="width: 99.14%;"></div>
+          </div>
+          <div id="kpi-prob-foot" class="kpi-foot">落於第 12 席競爭門檻之上之累積常態機率</div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Section 02: Interactive Predictors & Simulator -->
+    <section class="section-block" aria-labelledby="sec-02-title">
+      <div class="section-head-row">
+        <div class="section-title-wrap">
+          <span class="index-num">02</span>
+          <h2 id="sec-02-title" class="section-heading">互動式預測因子與選情模擬器</h2>
+        </div>
+        <span class="section-sub">調整 4 項核心參數，即時觀察得票率、名次與勝率變動</span>
+      </div>
+
+      <div class="simulator-layout">
+        <!-- Left: Control Panel -->
+        <div class="controls-panel">
+          <!-- Presets -->
+          <div class="preset-bar">
+            <div class="control-group-label">
+              <span>快速情境劇本</span>
+              <span class="control-hint">一鍵載入典型選戰假設</span>
+            </div>
+            <div class="preset-chips" role="group" aria-label="快速情境劇本">
+              <button type="button" class="chip-btn active" data-preset="baseline" onclick="applyPreset('baseline')">基準預測（現況）</button>
+              <button type="button" class="chip-btn" data-preset="kmt3" onclick="applyPreset('kmt3')">國民黨 3 席保送配票</button>
+              <button type="button" class="chip-btn" data-preset="kmt4" onclick="applyPreset('kmt4')">國民黨 4 人強勢配票</button>
+              <button type="button" class="chip-btn" data-preset="crisis" onclick="applyPreset('crisis')">泛藍分裂／低轉移警報</button>
+              <button type="button" class="chip-btn" data-preset="beitou_push" onclick="applyPreset('beitou_push')">北投深耕＋責任區精準配票</button>
+            </div>
+          </div>
+
+          <!-- Predictor 1: Turnout -->
+          <div class="slider-block">
+            <div class="control-group-label">
+              <span>1. 投票率高低情境</span>
+              <span class="control-hint">調查 Q2：一定會 54.6% ＋ 可能會 30.3%</span>
+            </div>
+            <div class="segment-grid" role="group" aria-label="投票率高低情境">
+              <button type="button" class="seg-btn" data-turnout="low" onclick="setTurnout('low')">
+                <span class="seg-btn-title">低投票率 58%</span>
+                <span class="seg-btn-sub">冷選情・組織盤主導</span>
+              </button>
+              <button type="button" class="seg-btn active" data-turnout="baseline" onclick="setTurnout('baseline')">
+                <span class="seg-btn-title">基準 68.5%</span>
+                <span class="seg-btn-sub">模型調查基準</span>
+              </button>
+              <button type="button" class="seg-btn" data-turnout="high" onclick="setTurnout('high')">
+                <span class="seg-btn-title">高投票率 75%</span>
+                <span class="seg-btn-sub">熱選情・市長催票</span>
+              </button>
+              <button type="button" class="seg-btn" data-turnout="surge" onclick="setTurnout('surge')">
+                <span class="seg-btn-title">極高 80%+</span>
+                <span class="seg-btn-sub">雙強全面動員</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Predictor 2: KMT Allocation Mode -->
+          <div class="slider-block">
+            <div class="control-group-label">
+              <span>2. 國民黨配票模式</span>
+              <span class="control-hint">調整張斯綱、汪志冰、林杏兒、賴苡任選票分配</span>
+            </div>
+            <div class="segment-grid" role="group" aria-label="國民黨配票模式">
+              <button type="button" class="seg-btn active" data-alloc="none" onclick="setAllocation('none')">
+                <span class="seg-btn-title">無配票</span>
+                <span class="seg-btn-sub">自由競爭・強者吸票</span>
+              </button>
+              <button type="button" class="seg-btn" data-alloc="even4" onclick="setAllocation('even4')">
+                <span class="seg-btn-title">4 人均分</span>
+                <span class="seg-btn-sub">3 現任＋賴苡任配票</span>
+              </button>
+              <button type="button" class="seg-btn" data-alloc="even3" onclick="setAllocation('even3')">
+                <span class="seg-btn-title">3 人均分</span>
+                <span class="seg-btn-sub">全力保送現任 3 席</span>
+              </button>
+              <button type="button" class="seg-btn" data-alloc="ward" onclick="setAllocation('ward')">
+                <span class="seg-btn-title">責任區精準挹注</span>
+                <span class="seg-btn-sub">分區固票・補足弱區</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Predictor 3: Pan-Blue Transfer Rate -->
+          <div class="slider-block">
+            <label for="slider-transfer" class="control-group-label">
+              <span>3. 泛藍選民支持轉移率（市長母雞＋政黨基本盤）</span>
+              <span class="control-hint">蔣萬安 46.5% vs 泛藍盤 30.3%（基準 50%）</span>
+            </label>
+            <div class="slider-row">
+              <input type="range" id="slider-transfer" min="0" max="100" step="1" value="50" oninput="syncFromSliderTransfer(this.value)">
+              <div class="num-input-wrap">
+                <input type="number" id="input-transfer" class="num-input" min="0" max="100" step="1" value="50" aria-label="泛藍選民支持轉移率百分比" oninput="syncFromNumberTransfer(this.value)">
+                <span class="num-unit">%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Predictor 4: Shilin vs Beitou Regional Support -->
+          <div class="slider-block">
+            <div class="control-group-label">
+              <span>4. 士林 vs 北投分區支持度</span>
+              <span class="control-hint">樣本權重：士林 52.5%・北投 47.5%</span>
+            </div>
+            <div class="regional-dual-grid">
+              <div class="slider-block">
+                <label for="slider-shilin" class="control-group-label">
+                  <span>士林區支持指數</span>
+                  <span class="control-hint">權重 52.5%</span>
+                </label>
+                <div class="slider-row">
+                  <input type="range" id="slider-shilin" min="60" max="160" step="1" value="100" oninput="syncFromSliderShilin(this.value)">
+                  <div class="num-input-wrap">
+                    <input type="number" id="input-shilin" class="num-input" min="60" max="160" step="1" value="100" aria-label="士林區支持指數" oninput="syncFromNumberShilin(this.value)">
+                    <span class="num-unit">%</span>
+                  </div>
+                </div>
+              </div>
+              <div class="slider-block">
+                <label for="slider-beitou" class="control-group-label">
+                  <span>北投區支持指數</span>
+                  <span class="control-hint">權重 47.5%</span>
+                </label>
+                <div class="slider-row">
+                  <input type="range" id="slider-beitou" min="60" max="160" step="1" value="100" oninput="syncFromSliderBeitou(this.value)">
+                  <div class="num-input-wrap">
+                    <input type="number" id="input-beitou" class="num-input" min="60" max="160" step="1" value="100" aria-label="北投區支持指數" oninput="syncFromNumberBeitou(this.value)">
+                    <span class="num-unit">%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Live Probability Distribution + Factor Contributions -->
+        <div class="sim-output-col">
+          <div class="chart-card">
+            <div class="chart-card-head">
+              <h3 class="chart-title">當選機率密度與第 12 席門檻對照</h3>
+              <span id="dist-chart-sub" class="chart-sub">預估 3.38% vs 第 13 名門檻 2.35%</span>
+            </div>
+            <div class="chart-box" style="min-height: 280px;">
+              <canvas id="probDistChart"></canvas>
+            </div>
+            <p class="chart-sub">藍線為林杏兒模擬得票機率分佈（陰影區為 95% 信心區間），紅色虛線為第 12 席安全門檻（超越第 12 位競爭者）。</p>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-card-head">
+              <h3 class="chart-title">各預測因子即時貢獻拆解</h3>
+              <span class="chart-sub">相較基準模型 3.38% 之淨變動</span>
+            </div>
+            <ul id="factor-breakdown-list" class="factor-list">
+              <!-- Populated dynamically -->
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 03: 19 Candidates Ranking & Table -->
+    <section class="section-block" aria-labelledby="sec-03-title">
+      <div class="section-head-row">
+        <div class="section-title-wrap">
+          <span class="index-num">03</span>
+          <h2 id="sec-03-title" class="section-heading">第一選區 19 位候選人預估排行榜</h2>
+        </div>
+        <span class="section-sub">前 12 名當選｜第 12 與第 13 名間以紅線標示當選分界</span>
+      </div>
+
+      <div class="filter-toolbar">
+        <div class="preset-chips" role="group" aria-label="篩選政黨候選人">
+          <button type="button" class="chip-btn active" data-party-filter="all" onclick="setPartyFilter('all')">全部候選人 (19)</button>
+          <button type="button" class="chip-btn" data-party-filter="KMT" onclick="setPartyFilter('KMT')">國民黨 (5)</button>
+          <button type="button" class="chip-btn" data-party-filter="DPP" onclick="setPartyFilter('DPP')">民進黨 (5)</button>
+          <button type="button" class="chip-btn" data-party-filter="OTHER" onclick="setPartyFilter('OTHER')">民眾／新黨／時力／無黨 (9)</button>
+        </div>
+        <span id="ranking-summary-note" class="section-sub">國民黨目前預估取得 2 席（第 2 名張斯綱、第 4 名汪志冰）＋林杏兒第 10 名</span>
+      </div>
+
+      <div class="ranking-grid">
+        <div class="chart-card">
+          <div class="chart-card-head">
+            <h3 class="chart-title">候選人模擬得票率排序長條圖</h3>
+            <span class="chart-sub">橘金色：林杏兒｜深藍色：國民黨其他候選人｜灰色：其餘各黨</span>
+          </div>
+          <div class="chart-box-tall" style="min-height: 540px;">
+            <canvas id="rankingBarChart"></canvas>
+          </div>
+        </div>
+
+        <div class="table-scroll">
+          <table class="data-table" aria-label="台北市第一選區19位候選人模擬得票率表">
+            <thead>
+              <tr>
+                <th>名次</th>
+                <th>候選人</th>
+                <th>政黨</th>
+                <th class="num">調查Q3</th>
+                <th class="num">模擬得票</th>
+                <th class="num">較基準</th>
+                <th>席次狀態</th>
+              </tr>
+            </thead>
+            <tbody id="candidates-tbody">
+              <!-- Populated dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 04: Party Landscape & KMT Internal Vote Squeeze -->
+    <section class="section-block" aria-labelledby="sec-04-title">
+      <div class="section-head-row">
+        <div class="section-title-wrap">
+          <span class="index-num">04</span>
+          <h2 id="sec-04-title" class="section-heading">政黨盤勢結構與國民黨內部選票擠壓分析</h2>
+        </div>
+        <span class="section-sub">揭示配票模式對國民黨 5 位候選人內部版圖之重分配效應</span>
+      </div>
+
+      <div class="analysis-grid">
+        <div class="chart-card">
+          <div class="chart-card-head">
+            <h3 class="chart-title">國民黨 5 人內部選票擠壓結構</h3>
+            <span id="kmt-total-sub" class="chart-sub">國民黨合計預估得票：31.88%（基準 vs 即時模擬）</span>
+          </div>
+          <div class="chart-box" style="min-height: 310px;">
+            <canvas id="kmtSqueezeChart"></canvas>
+          </div>
+          <p class="chart-sub">「無配票」情境下，張斯綱與汪志冰合計吸納超過七成藍營選票，造成林杏兒（3.38%）與賴苡任（2.68%）處於擠壓帶；啟動配票可有效拉抬安全墊。</p>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-card-head">
+            <h3 class="chart-title">選區政黨基本盤與各陣營預估得票總量</h3>
+            <span class="chart-sub">對照 Q8/PARTY2 政黨認同與 Q5 市長支持度</span>
+          </div>
+          <div class="chart-box" style="min-height: 310px;">
+            <canvas id="partyLandscapeChart"></canvas>
+          </div>
+          <p class="chart-sub">調查顯示泛綠認同 34.7%、泛藍 30.3%、中間選民 30.3%，但台北市長蔣萬安支持度達 46.5%，形成泛藍選票能否成功外溢轉移之關鍵槓桿。</p>
+        </div>
+      </div>
+
+      <!-- Sub-district Structure (AREA2) -->
+      <div class="chart-card">
+        <div class="chart-card-head">
+          <h3 class="chart-title">士林・北投 14 次分區樣本結構與雙區支持度模擬貢獻</h3>
+          <span id="subdistrict-sub" class="chart-sub">士林區 52.5%（N = 562）｜北投區 47.5%（N = 509）</span>
+        </div>
+        <div class="chart-box" style="min-height: 290px;">
+          <canvas id="subdistrictChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- Methodology & Source Attribution -->
+    <aside class="aside-box" aria-label="模型方法與資料說明">
+      <div class="aside-col">
+        <h3>預測模型與基準校準說明</h3>
+        <p>本模型以《2026年9月台北市第一選區民意調查編碼簿》（N = 1,071）為實證基底，結合 Q3 議員支持度合計、Q4 第二支持人選、Q2 投票意願權重及 Q5 市長支持外溢係數，建構多候選人市議員複數選區（SNTV，應選 12 席）動態模擬器。</p>
+        <ul>
+          <li>基準情境下，林杏兒預估得票率為 <strong>3.38%</strong>，位居 19 位有效候選人中第 <strong>10 名</strong>，95% 信心區間為 <strong>2.30% – 4.46%</strong>，當選機率 <strong>99.14%</strong>。</li>
+          <li>依序扣除 Q3 調查結果為 0.0% 之未獲支持登記人選（陳彥廷），排行榜呈現具實質競爭力之 19 位候選人。</li>
+        </ul>
+      </div>
+      <div class="aside-col">
+        <h3>模擬因子運作機制</h3>
+        <ul>
+          <li><strong>投票率情境</strong>：調整政黨基本盤動員係數與中間選民稀釋度；低投票率凸顯現任組織盤優勢，高投票率放大市長母雞與空氣票影響。</li>
+          <li><strong>國民黨配票模式</strong>：依組織配票執行彈性（約 65%–75% 執行率），將領先席次（張斯綱、汪志冰）之超額選票轉移予林杏兒與指定配票對象。</li>
+          <li><strong>泛藍支持轉移率</strong>：衡量蔣萬安（46.5%）與泛藍陣營（30.3%）支持者將議員票投給國民黨候選人的轉化效率，直接決定藍營總得票池大小。</li>
+          <li><strong>士林 vs 北投分區支持度</strong>：依實際戶籍人口比例（52.5% vs 47.5%）與次分區權重加權計算地區耕耘對得票率的邊際貢獻。</li>
+        </ul>
+      </div>
+    </aside>
+
+    <footer class="source-footer">
+      <span>資料來源：台北市議員第 1 選區（士林・北投）原始民調資料編碼簿（2026 年 9 月調查，N = 1,071，加權變數 W）。</span>
+      <span>模型用途：選情結構視覺化與策略敏感度分析（非官方開票結果）。</span>
+    </footer>
+  </main>
+
+  <api-shim></api-shim>
+  <script>
+    // =========================================================================
+    // 1. Source-Grounded Dataset (19 active candidates from Q3合計, N=1,071)
+    // =========================================================================
+    const BASELINE_LIN_SHARE = 3.38;
+    const TOTAL_SEATS = 12;
+
+    const CANDIDATES = [
+      { id: 10, name: `林延鳳`, party: `DPP`, partyLabel: `民進黨`, incumbent: true,  q3Count: 105, q3Pct: 9.8, q4Pct: 4.0, baseShare: 14.35, shilinBias: 0.56, beitouBias: 0.44, turnoutBeta: 0.12 },
+      { id: 3,  name: `張斯綱`, party: `KMT`, partyLabel: `國民黨`, incumbent: true,  q3Count: 104, q3Pct: 9.7, q4Pct: 6.1, baseShare: 14.20, shilinBias: 0.58, beitouBias: 0.42, turnoutBeta: -0.05 },
+      { id: 11, name: `黃Ｏ瑩`, party: `TPP`, partyLabel: `民眾黨`, incumbent: true,  q3Count: 76,  q3Pct: 7.1, q4Pct: 2.9, baseShare: 10.65, shilinBias: 0.49, beitouBias: 0.51, turnoutBeta: 0.25 },
+      { id: 2,  name: `汪志冰`, party: `KMT`, partyLabel: `國民黨`, incumbent: true,  q3Count: 74,  q3Pct: 6.9, q4Pct: 5.1, baseShare: 10.30, shilinBias: 0.50, beitouBias: 0.50, turnoutBeta: -0.10 },
+      { id: 12, name: `侯漢廷`, party: `NEW`, partyLabel: `新黨`,   incumbent: true,  q3Count: 64,  q3Pct: 5.9, q4Pct: 3.1, baseShare: 8.95,  shilinBias: 0.51, beitouBias: 0.49, turnoutBeta: 0.08 },
+      { id: 9,  name: `陳賢蔚`, party: `DPP`, partyLabel: `民進黨`, incumbent: true,  q3Count: 55,  q3Pct: 5.1, q4Pct: 3.2, baseShare: 7.85,  shilinBias: 0.36, beitouBias: 0.64, turnoutBeta: 0.04 },
+      { id: 8,  name: `鍾佩玲`, party: `DPP`, partyLabel: `民進黨`, incumbent: true,  q3Count: 43,  q3Pct: 4.0, q4Pct: 4.2, baseShare: 6.30,  shilinBias: 0.66, beitouBias: 0.34, turnoutBeta: -0.04 },
+      { id: 7,  name: `陳慈慧`, party: `DPP`, partyLabel: `民進黨`, incumbent: true,  q3Count: 34,  q3Pct: 3.2, q4Pct: 3.0, baseShare: 5.05,  shilinBias: 0.52, beitouBias: 0.48, turnoutBeta: -0.06 },
+      { id: 6,  name: `林世宗`, party: `DPP`, partyLabel: `民進黨`, incumbent: true,  q3Count: 28,  q3Pct: 2.7, q4Pct: 1.7, baseShare: 4.15,  shilinBias: 0.44, beitouBias: 0.56, turnoutBeta: -0.14 },
+      { id: 1,  name: `林杏兒`, party: `KMT`, partyLabel: `國民黨`, incumbent: true,  q3Count: 21,  q3Pct: 2.0, q4Pct: 1.9, baseShare: 3.38,  shilinBias: 0.525, beitouBias: 0.475, turnoutBeta: 0.03, isFocal: true },
+      { id: 16, name: `陳怡潔`, party: `IND`, partyLabel: `無黨籍`, incumbent: false, q3Count: 18,  q3Pct: 1.7, q4Pct: 1.8, baseShare: 2.85,  shilinBias: 0.55, beitouBias: 0.45, turnoutBeta: -0.08 },
+      { id: 4,  name: `賴苡任`, party: `KMT`, partyLabel: `國民黨`, incumbent: false, q3Count: 17,  q3Pct: 1.6, q4Pct: 1.1, baseShare: 2.68,  shilinBias: 0.54, beitouBias: 0.46, turnoutBeta: 0.18 },
+      { id: 17, name: `紀建漢`, party: `IND`, partyLabel: `無黨籍`, incumbent: false, q3Count: 15,  q3Pct: 1.4, q4Pct: 1.0, baseShare: 2.35,  shilinBias: 0.60, beitouBias: 0.40, turnoutBeta: 0.02 },
+      { id: 15, name: `陳重文`, party: `IND`, partyLabel: `無黨籍`, incumbent: true,  q3Count: 13,  q3Pct: 1.3, q4Pct: 2.1, baseShare: 2.15,  shilinBias: 0.42, beitouBias: 0.58, turnoutBeta: -0.12 },
+      { id: 13, name: `謝閔弘`, party: `NPP`, partyLabel: `時代力量`, incumbent: false, q3Count: 8, q3Pct: 0.8, q4Pct: 0.2, baseShare: 1.40,  shilinBias: 0.50, beitouBias: 0.50, turnoutBeta: 0.22 },
+      { id: 5,  name: `林揚庭`, party: `KMT`, partyLabel: `國民黨`, incumbent: false, q3Count: 6,  q3Pct: 0.6, q4Pct: 1.5, baseShare: 1.32,  shilinBias: 0.48, beitouBias: 0.52, turnoutBeta: 0.14 },
+      { id: 20, name: `劉致妤`, party: `IND`, partyLabel: `無黨籍`, incumbent: false, q3Count: 4,  q3Pct: 0.4, q4Pct: 0.0, baseShare: 0.85,  shilinBias: 0.53, beitouBias: 0.47, turnoutBeta: 0.05 },
+      { id: 19, name: `李　文`, party: `IND`, partyLabel: `無黨籍`, incumbent: false, q3Count: 3,  q3Pct: 0.3, q4Pct: 0.0, baseShare: 0.72,  shilinBias: 0.55, beitouBias: 0.45, turnoutBeta: 0.00 },
+      { id: 14, name: `林聖峰`, party: `FAM`, partyLabel: `家政黨`, incumbent: false, q3Count: 1,  q3Pct: 0.1, q4Pct: 0.0, baseShare: 0.50,  shilinBias: 0.50, beitouBias: 0.50, turnoutBeta: 0.05 }
+    ];
+
+    const SUBDISTRICTS = [
+      { code: 67, district: `北投`, name: `北投-石牌`,   pct: 12.2, count: 130 },
+      { code: 57, district: `士林`, name: `士林-社子`,   pct: 11.3, count: 121 },
+      { code: 52, district: `士林`, name: `士林-天母`,   pct: 9.8,  count: 105 },
+      { code: 64, district: `北投`, name: `北投-舊北投`, pct: 7.8,  count: 84 },
+      { code: 55, district: `士林`, name: `士林-街上`,   pct: 7.3,  count: 78 },
+      { code: 66, district: `北投`, name: `北投-唭哩岸`, pct: 7.2,  count: 77 },
+      { code: 62, district: `北投`, name: `北投-大屯`,   pct: 6.3,  count: 67 },
+      { code: 65, district: `北投`, name: `北投-關渡`,   pct: 6.0,  count: 65 },
+      { code: 56, district: `士林`, name: `士林-後港`,   pct: 5.9,  count: 64 },
+      { code: 53, district: `士林`, name: `士林-芝山岩`, pct: 5.5,  count: 59 },
+      { code: 54, district: `士林`, name: `士林-蘭雅`,   pct: 4.4,  count: 48 },
+      { code: 63, district: `北投`, name: `北投-新北投`, pct: 3.3,  count: 36 },
+      { code: 51, district: `士林`, name: `士林-陽明山`, pct: 2.9,  count: 31 },
+      { code: 61, district: `北投`, name: `北投-陽明山`, pct: 1.0,  count: 11 }
+    ];
+
+    const DEFAULT_STATE = {
+      turnout: `baseline`,      // 'low' | 'baseline' | 'high' | 'surge'
+      allocation: `none`,       // 'none' | 'even4' | 'even3' | 'ward'
+      transferRate: 50,         // 0..100
+      shilinSupport: 100,       // 60..160
+      beitouSupport: 100,       // 60..160
+      partyFilter: `all`,       // 'all' | 'KMT' | 'DPP' | 'OTHER'
+      activePreset: `baseline`
+    };
+
+    let simState = Object.assign({}, DEFAULT_STATE);
+
+    // Chart instances
+    let probDistChart = null;
+    let rankingBarChart = null;
+    let kmtSqueezeChart = null;
+    let partyLandscapeChart = null;
+    let subdistrictChart = null;
+
+    // Last computed results for CSV export
+    let lastSimResult = null;
+
+    // =========================================================================
+    // 2. CSS Token Helper (zero hardcoded hex in JS)
+    // =========================================================================
+    function getToken(name) {
+      return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    // Standard Normal CDF (Abramowitz & Stegun)
+    function normalCdf(z) {
+      const sign = z < 0 ? -1 : 1;
+      const x = Math.abs(z) / Math.SQRT2;
+      const t = 1.0 / (1.0 + 0.3275911 * x);
+      const y = 1.0 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+      return 0.5 * (1.0 + sign * y);
+    }
+
+    // =========================================================================
+    // 3. Simulation Engine
+    // =========================================================================
+    function computeSimulation(state) {
+      const turnoutMap = { low: -0.10, baseline: 0.0, high: 0.08, surge: 0.14 };
+      const tDelta = turnoutMap[state.turnout] !== undefined ? turnoutMap[state.turnout] : 0;
+
+      // 1) Start from base shares and apply turnout + pan-blue transfer rate
+      const transferOffset = (state.transferRate - 50) / 50; // -1.0 to +1.0
+
+      const working = CANDIDATES.map(function(c) {
+        let share = c.baseShare;
+
+        // Turnout elasticity effect
+        share = share * (1 + tDelta * c.turnoutBeta * 2.2);
+
+        // Pan-Blue voter transfer rate (from Chiang Wan-an 46.5% / Pan-Blue 30.3%)
+        if (c.party === `KMT`) {
+          // Higher transfer lifts KMT pool; Lin Hsing-er & newcomers have higher sensitivity to coattail transfer
+          const sensitivity = c.isFocal ? 0.42 : (c.incumbent ? 0.16 : 0.30);
+          share = share * (1 + transferOffset * sensitivity);
+        } else if (c.party === `NEW` || c.id === 15) {
+          // New Party (Hou Han-ting) & Pan-Blue leaning independent (Chen Chung-wen) absorb votes when KMT transfer drops
+          share = share * (1 - transferOffset * 0.14);
+        } else if (c.party === `TPP`) {
+          // TPP (Huang) slight inverse leakage with KMT transfer
+          share = share * (1 - transferOffset * 0.08);
+        }
+
+        // Regional Shilin vs Beitou adjustment specifically modeled for Lin Hsing-er's ground support
+        if (c.isFocal) {
+          const regMultiplier = 0.525 * (state.shilinSupport / 100) + 0.475 * (state.beitouSupport / 100);
+          share = share * regMultiplier;
+        }
+
+        return Object.assign({}, c, { simShare: Math.max(0.15, share) });
+      });
+
+      // 2) Apply KMT internal vote allocation mode across the 5 KMT candidates
+      const kmtItems = working.filter(function(c) { return c.party === `KMT`; });
+      const kmtTotal = kmtItems.reduce(function(acc, c) { return acc + c.simShare; }, 0);
+
+      // Compute natural KMT shares before allocation
+      const linPreAlloc = working.find(function(c) { return c.isFocal; }).simShare;
+
+      if (state.allocation === `even4`) {
+        // 4-way equalized allocation (Zhang, Wang, Lin, Lai), keeping Lin Yang-ting minimal organizational residual
+        const yang = kmtItems.find(function(c) { return c.id === 5; });
+        const yangTarget = yang.simShare * 0.72;
+        const pool4 = kmtTotal - yangTarget;
+        const evenTarget4 = pool4 / 4;
+        const compliance = 0.72; // realistic voter compliance to party allocation
+        kmtItems.forEach(function(c) {
+          if (c.id === 5) {
+            c.simShare = c.simShare * (1 - compliance) + yangTarget * compliance;
+          } else {
+            c.simShare = c.simShare * (1 - compliance) + evenTarget4 * compliance;
+          }
+        });
+      } else if (state.allocation === `even3`) {
+        // 3-way incumbent guarantee (Zhang, Wang, Lin Hsing-er)
+        const nonInc = kmtItems.filter(function(c) { return !c.incumbent; });
+        const nonIncPool = nonInc.reduce(function(acc, c) { return acc + c.simShare * 0.65; }, 0);
+        const pool3 = kmtTotal - nonIncPool;
+        const evenTarget3 = pool3 / 3;
+        const compliance = 0.76;
+        kmtItems.forEach(function(c) {
+          if (!c.incumbent) {
+            c.simShare = c.simShare * (1 - compliance) + (c.simShare * 0.65) * compliance;
+          } else {
+            c.simShare = c.simShare * (1 - compliance) + evenTarget3 * compliance;
+          }
+        });
+      } else if (state.allocation === `ward`) {
+        // Precision ward allocation: reinforces Lin Hsing-er (+52% of surplus pulled mainly from top 2 KMT leaders)
+        const zhang = kmtItems.find(function(c) { return c.id === 3; });
+        const wang = kmtItems.find(function(c) { return c.id === 2; });
+        const lin = kmtItems.find(function(c) { return c.isFocal; });
+        const zhangShift = zhang.simShare * 0.11;
+        const wangShift = wang.simShare * 0.08;
+        zhang.simShare -= zhangShift;
+        wang.simShare -= wangShift;
+        lin.simShare += (zhangShift + wangShift) * 0.88;
+        const lai = kmtItems.find(function(c) { return c.id === 4; });
+        lai.simShare += (zhangShift + wangShift) * 0.12;
+      }
+
+      // Track allocation lift for attribution breakdown
+      const linPostAlloc = working.find(function(c) { return c.isFocal; }).simShare;
+      const allocEffectRaw = linPostAlloc - linPreAlloc;
+
+      // 3) Re-normalize all 19 candidates so total vote share = 100.00%
+      const rawTotal = working.reduce(function(acc, c) { return acc + c.simShare; }, 0);
+      working.forEach(function(c) {
+        c.simShare = (c.simShare / rawTotal) * 100;
+        c.deltaVsBase = c.simShare - c.baseShare;
+      });
+
+      // Exact baseline identity check: if all defaults, snap tiny float drift (<0.005) to exact source baseline
+      const isExactBaseline = (
+        state.turnout === `baseline` &&
+        state.allocation === `none` &&
+        Number(state.transferRate) === 50 &&
+        Number(state.shilinSupport) === 100 &&
+        Number(state.beitouSupport) === 100
+      );
+      if (isExactBaseline) {
+        working.forEach(function(c) {
+          c.simShare = c.baseShare;
+          c.deltaVsBase = 0;
+        });
+      }
+
+      // 4) Sort descending by simShare
+      const ranked = working.slice().sort(function(a, b) {
+        if (Math.abs(b.simShare - a.simShare) > 0.0001) return b.simShare - a.simShare;
+        return b.q3Count - a.q3Count;
+      });
+      ranked.forEach(function(c, idx) {
+        c.rank = idx + 1;
+      });
+
+      const linObj = ranked.find(function(c) { return c.isFocal; });
+      const others = ranked.filter(function(c) { return !c.isFocal; });
+      // To win one of the 12 seats, Lin must beat the 12th highest competitor
+      const cutoffCompetitor = others[TOTAL_SEATS - 1];
+      const cutoffShare = cutoffCompetitor ? cutoffCompetitor.simShare : 2.35;
+      const gapToCutoff = linObj.simShare - cutoffShare;
+
+      // 5) Confidence interval & Win Probability
+      // At baseline: linShare = 3.38, seLin = 0.551 -> CI [2.30%, 4.46%]; cutoff = 2.35 -> z = 1.03 / 0.4323 = 2.3825 -> 99.14%
+      const turnoutSeFactor = state.turnout === `low` ? 1.08 : (state.turnout === `surge` ? 0.96 : 1.0);
+      const seLin = Math.max(0.38, (0.551 * Math.sqrt(linObj.simShare / BASELINE_LIN_SHARE)) * turnoutSeFactor);
+      const ciLow = Math.max(0.20, linObj.simShare - 1.96 * seLin);
+      const ciHigh = Math.min(25.0, linObj.simShare + 1.96 * seLin);
+
+      const seDiff = 0.4323 * Math.sqrt((linObj.simShare / BASELINE_LIN_SHARE) * 0.65 + 0.35) * turnoutSeFactor;
+      const zScore = gapToCutoff / seDiff;
+      const winProb = Math.max(0.01, Math.min(99.99, normalCdf(zScore) * 100));
+
+      // 6) Alert Level
+      let alertLevel = `watch`;
+      let alertBadgeText = `低度警戒・安全領先邊緣`;
+      let alertDesc = ``;
+      if (linObj.rank <= 8 && winProb >= 99.3) {
+        alertLevel = `safe`;
+        alertBadgeText = `穩健安全・領先當選區`;
+        alertDesc = `林杏兒穩居第 ${linObj.rank} 名（得票率 ${linObj.simShare.toFixed(2)}%），高於第 12 席競爭門檻 +${gapToCutoff.toFixed(2)} 個百分點，選情相當穩固。`;
+      } else if (linObj.rank <= 10 && winProb >= 90) {
+        alertLevel = `watch`;
+        alertBadgeText = `低度警戒・防範內部擠壓`;
+        alertDesc = `林杏兒位居第 ${linObj.rank} 名，領先第 12 席淘汰門檻 +${gapToCutoff.toFixed(2)} 個百分點；但國民黨同區競爭激烈，仍需穩定泛藍轉移與配票紀律。`;
+      } else if (linObj.rank <= 12 && winProb >= 55) {
+        alertLevel = `elevated`;
+        alertBadgeText = `中高度警戒・當選邊緣保衛`;
+        alertDesc = `林杏兒排名滑落至第 ${linObj.rank} 名，僅距落選門檻 ${gapToCutoff >= 0 ? '+' : ''}${gapToCutoff.toFixed(2)} 個百分點，建議即刻啟動責任區固票或配票整合。`;
+      } else {
+        alertLevel = `danger`;
+        alertBadgeText = `紅色警報・落選危機區`;
+        alertDesc = `林杏兒跌至第 ${linObj.rank} 名（低於第 12 席當選線），得票率 ${linObj.simShare.toFixed(2)}% 不足以抵禦分票衝擊，必須強化泛藍動員與配票機制。`;
+      }
+
+      // 7) Factor attribution estimates relative to baseline
+      const turnoutEffect = isExactBaseline ? 0 : (BASELINE_LIN_SHARE * (tDelta * 0.03 * 2.2));
+      const transferEffect = isExactBaseline ? 0 : (BASELINE_LIN_SHARE * (transferOffset * 0.42));
+      const regionMult = 0.525 * (state.shilinSupport / 100) + 0.475 * (state.beitouSupport / 100);
+      const regionEffect = isExactBaseline ? 0 : (BASELINE_LIN_SHARE * (regionMult - 1));
+      const allocEffect = isExactBaseline ? 0 : (allocEffectRaw * (100 / rawTotal));
+      // Normalize attribution sum to match exact linObj.deltaVsBase
+      const rawAttrSum = turnoutEffect + transferEffect + regionEffect + allocEffect;
+      const residual = linObj.deltaVsBase - rawAttrSum;
+
+      return {
+        ranked: ranked,
+        lin: linObj,
+        cutoffCompetitor: cutoffCompetitor,
+        cutoffShare: cutoffShare,
+        gapToCutoff: gapToCutoff,
+        ciLow: ciLow,
+        ciHigh: ciHigh,
+        seLin: seLin,
+        winProb: winProb,
+        alertLevel: alertLevel,
+        alertBadgeText: alertBadgeText,
+        alertDesc: alertDesc,
+        factors: [
+          { label: `國民黨配票模式效應`, val: allocEffect },
+          { label: `泛藍支持轉移效應`, val: transferEffect },
+          { label: `士林／北投分區耕耘`, val: regionEffect },
+          { label: `投票率結構波動`, val: turnoutEffect + residual }
+        ]
+      };
+    }
+
+    // =========================================================================
+    // 4. UI & Charts Renderers
+    // =========================================================================
+    function renderAll() {
+      const res = computeSimulation(simState);
+      lastSimResult = res;
+
+      renderKPIs(res);
+      renderMiniCI(res);
+      renderFactorBreakdown(res);
+      renderProbDistChart(res);
+      renderRankingChart(res);
+      renderCandidatesTable(res);
+      renderKMTSqueezeChart(res);
+      renderPartyLandscapeChart(res);
+      renderSubdistrictChart();
+      syncControlUI();
+    }
+
+    function renderKPIs(res) {
+      const lin = res.lin;
+      const elShare = document.getElementById(`kpi-vote-share`);
+      const elShareDelta = document.getElementById(`kpi-share-delta`);
+      const elShareBar = document.getElementById(`kpi-share-bar`);
+      const elModeTag = document.getElementById(`kpi-mode-tag`);
+
+      if (elShare) elShare.textContent = `${lin.simShare.toFixed(2)}%`;
+      if (elShareBar) elShareBar.style.width = `${Math.min(100, (lin.simShare / 15) * 100).toFixed(1)}%`;
+
+      const allocNames = { none: `無配票基準`, even4: `4人均分模式`, even3: `3人均分模式`, ward: `責任區挹注` };
+      if (elModeTag) elModeTag.textContent = allocNames[simState.allocation] || `自訂情境`;
+
+      if (elShareDelta) {
+        const d = lin.deltaVsBase;
+        if (Math.abs(d) < 0.005) {
+          elShareDelta.textContent = `基準 0.00%`;
+          elShareDelta.className = `kpi-delta neutral`;
+        } else {
+          elShareDelta.textContent = `${d > 0 ? '+' : ''}${d.toFixed(2)}%`;
+          elShareDelta.className = `kpi-delta ${d > 0 ? 'up' : 'down'}`;
+        }
+      }
+
+      const elRank = document.getElementById(`kpi-rank`);
+      const elRankDelta = document.getElementById(`kpi-rank-delta`);
+      const elRankFoot = document.getElementById(`kpi-rank-foot`);
+      if (elRank) elRank.textContent = `第 ${lin.rank} 名`;
+      if (elRankDelta) {
+        const rDiff = 10 - lin.rank; // positive means improved rank
+        if (rDiff === 0) {
+          elRankDelta.textContent = `持平基準`;
+          elRankDelta.className = `kpi-delta neutral`;
+        } else {
+          elRankDelta.textContent = `${rDiff > 0 ? '上升 ' + rDiff : '下滑 ' + Math.abs(rDiff)} 名`;
+          elRankDelta.className = `kpi-delta ${rDiff > 0 ? 'up' : 'down'}`;
+        }
+      }
+      if (elRankFoot && res.cutoffCompetitor) {
+        const comp12 = res.ranked[11];
+        const comp13 = res.ranked[12];
+        const gapTxt = res.gapToCutoff >= 0 ? `+${res.gapToCutoff.toFixed(2)}%` : `${res.gapToCutoff.toFixed(2)}%`;
+        elRankFoot.textContent = `距當選淘汰線（${res.cutoffCompetitor.name} ${res.cutoffShare.toFixed(2)}%）：${gapTxt}`;
+      }
+
+      const elCi = document.getElementById(`kpi-ci`);
+      const elCiFoot = document.getElementById(`kpi-ci-foot`);
+      if (elCi) elCi.textContent = `${res.ciLow.toFixed(2)}% – ${res.ciHigh.toFixed(2)}%`;
+      if (elCiFoot) elCiFoot.textContent = `含抽樣誤差與選民流向波動（標準誤 SE ≈ ${res.seLin.toFixed(2)}%）`;
+
+      const elProb = document.getElementById(`kpi-win-prob`);
+      const elProbDelta = document.getElementById(`kpi-prob-delta`);
+      const elProbBar = document.getElementById(`kpi-prob-bar`);
+      const elProbTier = document.getElementById(`kpi-prob-tier`);
+
+      if (elProb) elProb.textContent = `${res.winProb.toFixed(2)}%`;
+      if (elProbBar) {
+        elProbBar.style.width = `${res.winProb.toFixed(1)}%`;
+        elProbBar.style.backgroundColor = res.winProb >= 90 ? getToken(`--data-3`) : (res.winProb >= 60 ? getToken(`--data-2`) : getToken(`--data-4`));
+      }
+      if (elProbTier) {
+        elProbTier.textContent = res.winProb >= 95 ? `極高機率當選` : (res.winProb >= 75 ? `當選機率偏高` : (res.winProb >= 50 ? `五五波拉鋸` : `落選風險高`));
+      }
+      if (elProbDelta) {
+        const pDiff = res.winProb - 99.14;
+        if (Math.abs(pDiff) < 0.01) {
+          elProbDelta.textContent = `基準`;
+          elProbDelta.className = `kpi-delta neutral`;
+        } else {
+          elProbDelta.textContent = `${pDiff > 0 ? '+' : ''}${pDiff.toFixed(2)}%`;
+          elProbDelta.className = `kpi-delta ${pDiff > 0 ? 'up' : 'down'}`;
+        }
+      }
+
+      // Alert Strip
+      const elStrip = document.getElementById(`alert-strip`);
+      const elBadge = document.getElementById(`alert-badge`);
+      const elDesc = document.getElementById(`alert-desc`);
+      const elCutGap = document.getElementById(`alert-cutoff-gap`);
+      if (elStrip) elStrip.className = `alert-strip level-${res.alertLevel}`;
+      if (elBadge) elBadge.textContent = res.alertBadgeText;
+      if (elDesc) elDesc.textContent = res.alertDesc;
+      if (elCutGap) elCutGap.textContent = `距安全門檻：${res.gapToCutoff >= 0 ? '+' : ''}${res.gapToCutoff.toFixed(2)}%`;
+    }
+
+    function renderMiniCI(res) {
+      const svg = document.getElementById(`ci-mini-svg`);
+      if (!svg) return;
+      const w = 260;
+      const h = 44;
+      const maxAxis = 10.0;
+      const xOf = function(v) { return Math.max(8, Math.min(w - 8, (v / maxAxis) * (w - 16) + 8)); };
+      const xLow = xOf(res.ciLow);
+      const xHigh = xOf(res.ciHigh);
+      const xMean = xOf(res.lin.simShare);
+      const xCut = xOf(res.cutoffShare);
+
+      const cPrimary = getToken(`--data-1`);
+      const cGold = getToken(`--data-2`);
+      const cDanger = getToken(`--data-4`);
+      const cTrack = getToken(`--outline-variant`);
+
+      svg.innerHTML = `
+        <line x1="8" y1="24" x2="${w - 8}" y2="24" stroke="${cTrack}" stroke-width="2" />
+        <line x1="${xLow.toFixed(1)}" y1="24" x2="${xHigh.toFixed(1)}" y2="24" stroke="${cPrimary}" stroke-width="6" stroke-linecap="round" opacity="0.35" />
+        <line x1="${xCut.toFixed(1)}" y1="6" x2="${xCut.toFixed(1)}" y2="38" stroke="${cDanger}" stroke-width="1.5" stroke-dasharray="3 2" />
+        <circle cx="${xMean.toFixed(1)}" cy="24" r="5" fill="${cGold}" stroke="${cPrimary}" stroke-width="2" />
+        <text x="${xCut.toFixed(1)}" y="43" font-size="9" font-family="Geist Mono, monospace" fill="${cDanger}" text-anchor="middle">門檻 ${res.cutoffShare.toFixed(1)}%</text>
+      `;
+    }
+
+    function renderFactorBreakdown(res) {
+      const list = document.getElementById(`factor-breakdown-list`);
+      if (!list) return;
+      const posColor = getToken(`--data-3`);
+      const negColor = getToken(`--data-4`);
+      const neuColor = getToken(`--data-context`);
+
+      list.innerHTML = res.factors.map(function(f) {
+        const absMax = 3.5;
+        const pct = Math.min(100, (Math.abs(f.val) / absMax) * 100);
+        const color = f.val > 0.01 ? posColor : (f.val < -0.01 ? negColor : neuColor);
+        const signStr = f.val > 0.005 ? `+${f.val.toFixed(2)}%` : (f.val < -0.005 ? `${f.val.toFixed(2)}%` : `0.00%`);
+        return `
+          <li class="factor-item">
+            <span>${f.label}</span>
+            <div class="factor-bar-bg">
+              <div class="factor-bar-val" style="width: ${pct.toFixed(1)}%; background-color: ${color};"></div>
+            </div>
+            <span class="factor-num" style="color: ${color};">${signStr}</span>
+          </li>
+        `;
+      }).join(``);
+    }
+
+    function renderProbDistChart(res) {
+      const canvas = document.getElementById(`probDistChart`);
+      if (!canvas) return;
+      const sub = document.getElementById(`dist-chart-sub`);
+      if (sub) sub.textContent = `預估 ${res.lin.simShare.toFixed(2)}% vs 第 12 席競爭門檻 ${res.cutoffShare.toFixed(2)}%`;
+
+      const labels = [];
+      const pdfVals = [];
+      const ciVals = [];
+      const cutLineVals = [];
+
+      const mean = res.lin.simShare;
+      const sd = res.seLin;
+      const minX = 0.0;
+      const maxX = Math.max(9.0, Math.ceil(res.ciHigh + 1.5));
+      const steps = 60;
+
+      for (let i = 0; i <= steps; i++) {
+        const x = minX + (i / steps) * (maxX - minX);
+        labels.push(`${x.toFixed(1)}%`);
+        const z = (x - mean) / sd;
+        const pdf = (1 / (sd * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * z * z);
+        pdfVals.push(Number(pdf.toFixed(4)));
+        ciVals.push(x >= res.ciLow && x <= res.ciHigh ? Number(pdf.toFixed(4)) : null);
+      }
+
+      // Build vertical reference marker via closest x index
+      let cutIdx = 0;
+      let minDist = 999;
+      for (let i = 0; i <= steps; i++) {
+        const x = minX + (i / steps) * (maxX - minX);
+        if (Math.abs(x - res.cutoffShare) < minDist) {
+          minDist = Math.abs(x - res.cutoffShare);
+          cutIdx = i;
+        }
+      }
+      const peakPdf = Math.max.apply(null, pdfVals) * 1.08;
+      for (let i = 0; i <= steps; i++) {
+        cutLineVals.push(i === cutIdx ? peakPdf : null);
+      }
+
+      const cPrimary = getToken(`--data-1`);
+      const cDanger = getToken(`--data-4`);
+      const cGrid = getToken(`--outline-variant`);
+      const cText = getToken(`--on-surface-variant`);
+
+      if (probDistChart) {
+        probDistChart.data.labels = labels;
+        probDistChart.data.datasets[0].data = ciVals;
+        probDistChart.data.datasets[1].data = pdfVals;
+        probDistChart.data.datasets[2].data = cutLineVals;
+        probDistChart.data.datasets[2].label = `當選淘汰門檻 (${res.cutoffShare.toFixed(2)}%)`;
+        probDistChart.update(`none`);
+        return;
+      }
+
+      probDistChart = new Chart(canvas, {
+        type: `line`,
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: `95% 信心區間`,
+              data: ciVals,
+              borderColor: `transparent`,
+              backgroundColor: `rgba(31, 78, 95, 0.18)`,
+              fill: true,
+              pointRadius: 0,
+              tension: 0.35
+            },
+            {
+              label: `林杏兒得票率機率密度`,
+              data: pdfVals,
+              borderColor: cPrimary,
+              borderWidth: 2.5,
+              fill: false,
+              pointRadius: 0,
+              tension: 0.35
+            },
+            {
+              label: `當選淘汰門檻 (${res.cutoffShare.toFixed(2)}%)`,
+              data: cutLineVals,
+              type: `bar`,
+              backgroundColor: cDanger,
+              barThickness: 2,
+              borderRadius: 0
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: `top`,
+              labels: { color: cText, boxWidth: 12, font: { size: 11 } }
+            },
+            tooltip: {
+              mode: `index`,
+              intersect: false
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: cText, maxTicksLimit: 9, font: { family: `Geist Mono, monospace`, size: 11 } }
+            },
+            y: {
+              display: false,
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+
+    function renderRankingChart(res) {
+      const canvas = document.getElementById(`rankingBarChart`);
+      if (!canvas) return;
+
+      const filtered = filterCandidatesList(res.ranked);
+      const labels = filtered.map(function(c) { return `#${c.rank} ${c.name} [${c.partyLabel.slice(0, 1)}]`; });
+      const simVals = filtered.map(function(c) { return Number(c.simShare.toFixed(2)); });
+      const baseVals = filtered.map(function(c) { return Number(c.baseShare.toFixed(2)); });
+
+      const cGold = getToken(`--data-2`);
+      const cKmt = getToken(`--data-1`);
+      const cContext = getToken(`--data-context`);
+      const cText = getToken(`--on-surface`);
+      const cSubText = getToken(`--on-surface-variant`);
+      const cGrid = getToken(`--outline-variant`);
+
+      const bgColors = filtered.map(function(c) {
+        if (c.isFocal) return cGold;
+        if (c.party === `KMT`) return cKmt;
+        return cContext;
+      });
+
+      // Summary note
+      const top12 = res.ranked.slice(0, 12);
+      const kmtWon = top12.filter(function(c) { return c.party === `KMT`; });
+      const dppWon = top12.filter(function(c) { return c.party === `DPP`; }).length;
+      const summaryEl = document.getElementById(`ranking-summary-note`);
+      if (summaryEl) {
+        summaryEl.textContent = `前 12 席席次分佈：國民黨 ${kmtWon.length} 席、民進黨 ${dppWon} 席、其他 ${12 - kmtWon.length - dppWon} 席（林杏兒目前第 ${res.lin.rank} 名）`;
+      }
+
+      if (rankingBarChart) {
+        rankingBarChart.data.labels = labels;
+        rankingBarChart.data.datasets[0].data = simVals;
+        rankingBarChart.data.datasets[0].backgroundColor = bgColors;
+        rankingBarChart.data.datasets[1].data = baseVals;
+        rankingBarChart.update(`none`);
+        return;
+      }
+
+      rankingBarChart = new Chart(canvas, {
+        type: `bar`,
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: `即時模擬得票率 (%)`,
+              data: simVals,
+              backgroundColor: bgColors,
+              borderRadius: 2
+            },
+            {
+              label: `基準預測 (%)`,
+              data: baseVals,
+              backgroundColor: `rgba(23, 24, 26, 0.14)`,
+              borderRadius: 2
+            }
+          ]
+        },
+        options: {
+          indexAxis: `y`,
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: `top`,
+              labels: { color: cText, boxWidth: 12, font: { size: 11 } }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  return `${ctx.dataset.label}: ${ctx.parsed.x.toFixed(2)}%`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              beginAtZero: true,
+              grid: { color: cGrid },
+              ticks: {
+                color: cSubText,
+                callback: function(v) { return `${v}%`; },
+                font: { family: `Geist Mono, monospace`, size: 11 }
+              }
+            },
+            y: {
+              grid: { display: false },
+              ticks: {
+                color: cText,
+                font: { size: 11.5, weight: `600` }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function filterCandidatesList(list) {
+      if (simState.partyFilter === `KMT`) return list.filter(function(c) { return c.party === `KMT`; });
+      if (simState.partyFilter === `DPP`) return list.filter(function(c) { return c.party === `DPP`; });
+      if (simState.partyFilter === `OTHER`) return list.filter(function(c) { return c.party !== `KMT` && c.party !== `DPP`; });
+      return list;
+    }
+
+    function renderCandidatesTable(res) {
+      const tbody = document.getElementById(`candidates-tbody`);
+      if (!tbody) return;
+      const list = filterCandidatesList(res.ranked);
+
+      tbody.innerHTML = list.map(function(c) {
+        const partyClass = c.party === `KMT` ? `party-kmt` : (c.party === `DPP` ? `party-dpp` : (c.party === `TPP` ? `party-tpp` : (c.party === `NEW` ? `party-new` : `party-other`)));
+        const deltaStr = Math.abs(c.deltaVsBase) < 0.005 ? `0.00%` : `${c.deltaVsBase > 0 ? '+' : ''}${c.deltaVsBase.toFixed(2)}%`;
+        const seatBadge = c.rank <= 10 ? `<span class="seat-status seat-safe">安全當選區</span>` : (c.rank <= 12 ? `<span class="seat-status seat-bubble">當選邊緣</span>` : `<span class="seat-status seat-out">落選觀察</span>`);
+        const rowClasses = [];
+        if (c.isFocal) rowClasses.push(`row-focal`);
+        if (c.rank === 12 && simState.partyFilter === `all`) rowClasses.push(`row-cutoff`);
+
+        return `
+          <tr class="${rowClasses.join(' ')}">
+            <td class="num"><strong>${c.rank}</strong></td>
+            <td>
+              <span>${c.name}</span>
+              ${c.incumbent ? `<span class="incumbent-tag">現任</span>` : ``}
+            </td>
+            <td><span class="party-badge ${partyClass}">${c.partyLabel}</span></td>
+            <td class="num">${c.q3Pct.toFixed(1)}%</td>
+            <td class="num"><strong>${c.simShare.toFixed(2)}%</strong></td>
+            <td class="num">${deltaStr}</td>
+            <td>${seatBadge}</td>
+          </tr>
+        `;
+      }).join(``);
+    }
+
+    function renderKMTSqueezeChart(res) {
+      const canvas = document.getElementById(`kmtSqueezeChart`);
+      if (!canvas) return;
+
+      const kmtIds = [3, 2, 1, 4, 5]; // 張斯綱, 汪志冰, 林杏兒, 賴苡任, 林揚庭
+      const kmtList = kmtIds.map(function(id) {
+        return res.ranked.find(function(c) { return c.id === id; });
+      });
+
+      const kmtTotal = kmtList.reduce(function(acc, c) { return acc + c.simShare; }, 0);
+      const subEl = document.getElementById(`kmt-total-sub`);
+      if (subEl) subEl.textContent = `國民黨 5 席合計預估得票：${kmtTotal.toFixed(2)}%（基準合計 31.88%）`;
+
+      const labels = kmtList.map(function(c) { return `${c.name} (#${c.rank})`; });
+      const baseData = kmtList.map(function(c) { return Number(c.baseShare.toFixed(2)); });
+      const simData = kmtList.map(function(c) { return Number(c.simShare.toFixed(2)); });
+
+      const cPrimary = getToken(`--data-1`);
+      const cGold = getToken(`--data-2`);
+      const cContext = getToken(`--data-context`);
+      const cGrid = getToken(`--outline-variant`);
+      const cText = getToken(`--on-surface`);
+      const cSubText = getToken(`--on-surface-variant`);
+
+      const simColors = kmtList.map(function(c) { return c.isFocal ? cGold : cPrimary; });
+
+      if (kmtSqueezeChart) {
+        kmtSqueezeChart.data.labels = labels;
+        kmtSqueezeChart.data.datasets[0].data = baseData;
+        kmtSqueezeChart.data.datasets[1].data = simData;
+        kmtSqueezeChart.data.datasets[1].backgroundColor = simColors;
+        kmtSqueezeChart.update(`none`);
+        return;
+      }
+
+      kmtSqueezeChart = new Chart(canvas, {
+        type: `bar`,
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: `無配票基準 (%)`,
+              data: baseData,
+              backgroundColor: cContext,
+              borderRadius: 2
+            },
+            {
+              label: `即時模擬分配 (%)`,
+              data: simData,
+              backgroundColor: simColors,
+              borderRadius: 2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: `top`,
+              labels: { color: cText, boxWidth: 12, font: { size: 11 } }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(ctx) {
+                  return `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)}%`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: cText, font: { size: 11.5, weight: `600` } }
+            },
+            y: {
+              beginAtZero: true,
+              grid: { color: cGrid },
+              ticks: {
+                color: cSubText,
+                callback: function(v) { return `${v}%`; },
+                font: { family: `Geist Mono, monospace`, size: 11 }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function renderPartyLandscapeChart(res) {
+      const canvas = document.getElementById(`partyLandscapeChart`);
+      if (!canvas) return;
+
+      const sumParty = function(pred) {
+        return Number(res.ranked.filter(pred).reduce(function(acc, c) { return acc + c.simShare; }, 0).toFixed(2));
+      };
+
+      const kmtSum = sumParty(function(c) { return c.party === `KMT`; });
+      const dppSum = sumParty(function(c) { return c.party === `DPP`; });
+      const tppSum = sumParty(function(c) { return c.party === `TPP`; });
+      const newSum = sumParty(function(c) { return c.party === `NEW`; });
+      const indSum = sumParty(function(c) { return c.party === `IND` || c.party === `NPP` || c.party === `FAM`; });
+
+      const labels = [`國民黨 (5人)`, `民進黨 (5人)`, `民眾黨 (1人)`, `新黨 (1人)`, `無黨／其他 (7人)`];
+      const councilShares = [kmtSum, dppSum, tppSum, newSum, indSum];
+      // Grounded in Q8 / PARTY2 survey breakdown
+      const partyIdShares = [24.8, 33.3, 8.5, 0.6, 32.8]; // 32.8% includes 不偏任何黨29.2%+其他小黨/無明確
+
+      const cPrimary = getToken(`--data-1`);
+      const cGreen = getToken(`--data-3`);
+      const cGold = getToken(`--data-2`);
+      const cContext = getToken(`--data-context`);
+      const cGrid = getToken(`--outline-variant`);
+      const cText = getToken(`--on-surface`);
+      const cSubText = getToken(`--on-surface-variant`);
+
+      if (partyLandscapeChart) {
+        partyLandscapeChart.data.datasets[0].data = partyIdShares;
+        partyLandscapeChart.data.datasets[1].data = councilShares;
+        partyLandscapeChart.update(`none`);
+        return;
+      }
+
+      partyLandscapeChart = new Chart(canvas, {
+        type: `bar`,
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: `Q8 調查政黨認同比例 (%)`,
+              data: partyIdShares,
+              backgroundColor: cContext,
+              borderRadius: 2
+            },
+            {
+              label: `模擬議員席次總得票 (%)`,
+              data: councilShares,
+              backgroundColor: [cPrimary, cGreen, cGold, cGold, cSubText],
+              borderRadius: 2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: `top`,
+              labels: { color: cText, boxWidth: 12, font: { size: 11 } }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: cText, font: { size: 11 } }
+            },
+            y: {
+              beginAtZero: true,
+              grid: { color: cGrid },
+              ticks: {
+                color: cSubText,
+                callback: function(v) { return `${v}%`; },
+                font: { family: `Geist Mono, monospace`, size: 11 }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function renderSubdistrictChart() {
+      const canvas = document.getElementById(`subdistrictChart`);
+      if (!canvas) return;
+
+      const subEl = document.getElementById(`subdistrict-sub`);
+      if (subEl) {
+        subEl.textContent = `士林區 52.5%（模擬指數 ${simState.shilinSupport}%）｜北投區 47.5%（模擬指數 ${simState.beitouSupport}%）`;
+      }
+
+      const labels = SUBDISTRICTS.map(function(s) { return s.name; });
+      const baseW = SUBDISTRICTS.map(function(s) { return s.pct; });
+      const weightedEff = SUBDISTRICTS.map(function(s) {
+        const mult = s.district === `士林` ? (simState.shilinSupport / 100) : (simState.beitouSupport / 100);
+        return Number((s.pct * mult).toFixed(2));
+      });
+
+      const cPrimary = getToken(`--data-1`);
+      const cGold = getToken(`--data-2`);
+      const cContext = getToken(`--data-context`);
+      const cGrid = getToken(`--outline-variant`);
+      const cText = getToken(`--on-surface`);
+      const cSubText = getToken(`--on-surface-variant`);
+
+      const colors = SUBDISTRICTS.map(function(s) {
+        return s.district === `士林` ? cPrimary : cGold;
+      });
+
+      if (subdistrictChart) {
+        subdistrictChart.data.datasets[0].data = baseW;
+        subdistrictChart.data.datasets[1].data = weightedEff;
+        subdistrictChart.update(`none`);
+        return;
+      }
+
+      subdistrictChart = new Chart(canvas, {
+        type: `bar`,
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: `編碼簿次分區樣本佔比 (%)`,
+              data: baseW,
+              backgroundColor: cContext,
+              borderRadius: 2
+            },
+            {
+              label: `雙區支持指數加權貢獻`,
+              data: weightedEff,
+              backgroundColor: colors,
+              borderRadius: 2
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: `top`,
+              labels: { color: cText, boxWidth: 12, font: { size: 11 } }
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { color: cText, font: { size: 10.5 } }
+            },
+            y: {
+              beginAtZero: true,
+              grid: { color: cGrid },
+              ticks: {
+                color: cSubText,
+                callback: function(v) { return `${v}%`; },
+                font: { family: `Geist Mono, monospace`, size: 11 }
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // =========================================================================
+    // 5. Interactive Event Handlers (Hoisted function declarations)
+    // =========================================================================
+    function syncControlUI() {
+      // Turnout buttons
+      document.querySelectorAll(`[data-turnout]`).forEach(function(btn) {
+        btn.classList.toggle(`active`, btn.dataset.turnout === simState.turnout);
+      });
+      // Allocation buttons
+      document.querySelectorAll(`[data-alloc]`).forEach(function(btn) {
+        btn.classList.toggle(`active`, btn.dataset.alloc === simState.allocation);
+      });
+      // Preset chips
+      document.querySelectorAll(`[data-preset]`).forEach(function(btn) {
+        btn.classList.toggle(`active`, btn.dataset.preset === simState.activePreset);
+      });
+      // Party filter chips
+      document.querySelectorAll(`[data-party-filter]`).forEach(function(btn) {
+        btn.classList.toggle(`active`, btn.dataset.partyFilter === simState.partyFilter);
+      });
+
+      const sTrans = document.getElementById(`slider-transfer`);
+      const iTrans = document.getElementById(`input-transfer`);
+      if (sTrans) sTrans.value = simState.transferRate;
+      if (iTrans) iTrans.value = simState.transferRate;
+
+      const sShi = document.getElementById(`slider-shilin`);
+      const iShi = document.getElementById(`input-shilin`);
+      if (sShi) sShi.value = simState.shilinSupport;
+      if (iShi) iShi.value = simState.shilinSupport;
+
+      const sBei = document.getElementById(`slider-beitou`);
+      const iBei = document.getElementById(`input-beitou`);
+      if (sBei) sBei.value = simState.beitouSupport;
+      if (iBei) iBei.value = simState.beitouSupport;
+    }
+
+    function setTurnout(mode) {
+      simState.turnout = mode;
+      simState.activePreset = `custom`;
+      persistState();
+      renderAll();
+    }
+
+    function setAllocation(mode) {
+      simState.allocation = mode;
+      simState.activePreset = `custom`;
+      persistState();
+      renderAll();
+    }
+
+    function setPartyFilter(filter) {
+      simState.partyFilter = filter;
+      persistState();
+      renderAll();
+    }
+
+    // Dedicated Dual-Input Sync Handlers (prevent slider snap-back)
+    function syncFromSliderTransfer(val) {
+      const clamped = Math.max(0, Math.min(100, Number(val) || 0));
+      simState.transferRate = clamped;
+      simState.activePreset = `custom`;
+      const inputEl = document.getElementById(`input-transfer`);
+      if (inputEl) inputEl.value = clamped;
+      persistState();
+      renderAll();
+    }
+    function syncFromNumberTransfer(val) {
+      const clamped = Math.max(0, Math.min(100, Number(val) || 0));
+      simState.transferRate = clamped;
+      simState.activePreset = `custom`;
+      const sliderEl = document.getElementById(`slider-transfer`);
+      if (sliderEl) sliderEl.value = clamped;
+      persistState();
+      renderAll();
+    }
+
+    function syncFromSliderShilin(val) {
+      const clamped = Math.max(60, Math.min(160, Number(val) || 100));
+      simState.shilinSupport = clamped;
+      simState.activePreset = `custom`;
+      const inputEl = document.getElementById(`input-shilin`);
+      if (inputEl) inputEl.value = clamped;
+      persistState();
+      renderAll();
+    }
+    function syncFromNumberShilin(val) {
+      const clamped = Math.max(60, Math.min(160, Number(val) || 100));
+      simState.shilinSupport = clamped;
+      simState.activePreset = `custom`;
+      const sliderEl = document.getElementById(`slider-shilin`);
+      if (sliderEl) sliderEl.value = clamped;
+      persistState();
+      renderAll();
+    }
+
+    function syncFromSliderBeitou(val) {
+      const clamped = Math.max(60, Math.min(160, Number(val) || 100));
+      simState.beitouSupport = clamped;
+      simState.activePreset = `custom`;
+      const inputEl = document.getElementById(`input-beitou`);
+      if (inputEl) inputEl.value = clamped;
+      persistState();
+      renderAll();
+    }
+    function syncFromNumberBeitou(val) {
+      const clamped = Math.max(60, Math.min(160, Number(val) || 100));
+      simState.beitouSupport = clamped;
+      simState.activePreset = `custom`;
+      const sliderEl = document.getElementById(`slider-beitou`);
+      if (sliderEl) sliderEl.value = clamped;
+      persistState();
+      renderAll();
+    }
+
+    function applyPreset(presetName) {
+      if (presetName === `baseline`) {
+        simState = Object.assign({}, DEFAULT_STATE, { partyFilter: simState.partyFilter });
+      } else if (presetName === `kmt3`) {
+        simState.turnout = `baseline`;
+        simState.allocation = `even3`;
+        simState.transferRate = 60;
+        simState.shilinSupport = 105;
+        simState.beitouSupport = 105;
+        simState.activePreset = `kmt3`;
+      } else if (presetName === `kmt4`) {
+        simState.turnout = `high`;
+        simState.allocation = `even4`;
+        simState.transferRate = 65;
+        simState.shilinSupport = 100;
+        simState.beitouSupport = 100;
+        simState.activePreset = `kmt4`;
+      } else if (presetName === `crisis`) {
+        simState.turnout = `low`;
+        simState.allocation = `none`;
+        simState.transferRate = 18;
+        simState.shilinSupport = 85;
+        simState.beitouSupport = 80;
+        simState.activePreset = `crisis`;
+      } else if (presetName === `beitou_push`) {
+        simState.turnout = `high`;
+        simState.allocation = `ward`;
+        simState.transferRate = 62;
+        simState.shilinSupport = 105;
+        simState.beitouSupport = 130;
+        simState.activePreset = `beitou_push`;
+      }
+      persistState();
+      renderAll();
+      showInlineNotice(`已載入情境劇本`);
+    }
+
+    function resetToBaseline() {
+      simState = Object.assign({}, DEFAULT_STATE);
+      persistState();
+      renderAll();
+      showInlineNotice(`已恢復基準模型（3.38%｜第 10 名）`);
+    }
+
+    function showInlineNotice(msg) {
+      const el = document.getElementById(`save-status`);
+      if (!el) return;
+      el.textContent = msg;
+      setTimeout(function() {
+        if (el.textContent === msg) el.textContent = ``;
+      }, 2600);
+    }
+
+    function exportSimulationCsv() {
+      if (!lastSimResult) return;
+      const lines = [
+        `名次,候選人,政黨,現任,調查Q3原始支持度(%),基準模擬得票率(%),即時模擬得票率(%),較基準變動(%)`
+      ];
+      lastSimResult.ranked.forEach(function(c) {
+        lines.push(`${c.rank},${c.name},${c.partyLabel},${c.incumbent ? '是' : '否'},${c.q3Pct.toFixed(1)},${c.baseShare.toFixed(2)},${c.simShare.toFixed(2)},${c.deltaVsBase.toFixed(2)}`);
+      });
+      const csvContent = `\uFEFF` + lines.join(`\n`);
+      if (window.notebookAppApi && typeof window.notebookAppApi.triggerFileDownload === `function`) {
+        window.notebookAppApi.triggerFileDownload({
+          content: csvContent,
+          contentType: `text/csv`,
+          encoding: `UTF-8`,
+          filename: `lin_hsing_er_tp01_simulation.csv`
+        });
+        showInlineNotice(`已匯出模擬 CSV 報表`);
+      } else {
+        const blob = new Blob([csvContent], { type: `text/csv;charset=utf-8;` });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement(`a`);
+        a.href = url;
+        a.download = `lin_hsing_er_tp01_simulation.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showInlineNotice(`已匯出模擬 CSV 報表`);
+      }
+    }
+
+    // =========================================================================
+    // 6. State Persistence & Initialization (Gemini Notebook Shim API)
+    // =========================================================================
+    async function persistState() {
+      if (window.notebookAppApi && typeof window.notebookAppApi.setAppState === `function`) {
+        try {
+          await window.notebookAppApi.setAppState({
+            turnout: simState.turnout,
+            allocation: simState.allocation,
+            transferRate: simState.transferRate,
+            shilinSupport: simState.shilinSupport,
+            beitouSupport: simState.beitouSupport,
+            partyFilter: simState.partyFilter,
+            activePreset: simState.activePreset
+          });
+        } catch (err) {
+          // Graceful fallback if shim unavailable
+        }
+      }
+    }
+
+    async function initApp() {
+      if (window.lucide && typeof window.lucide.createIcons === `function`) {
+        window.lucide.createIcons();
+      }
+
+      if (window.notebookAppApi && typeof window.notebookAppApi.getAppState === `function`) {
+        try {
+          const saved = await window.notebookAppApi.getAppState();
+          if (saved && typeof saved === `object`) {
+            simState = Object.assign({}, DEFAULT_STATE, saved);
+          }
+        } catch (err) {
+          // Keep defaults
+        }
+      }
+
+      renderAll();
+
+      if (window.notebookAppApi && typeof window.notebookAppApi.notifyAppReady === `function`) {
+        window.notebookAppApi.notifyAppReady();
+      }
+    }
+
+    document.addEventListener(`DOMContentLoaded`, initApp);
+  </script>
+</body>
+</html>
